@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulación de Incendios Forestales</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            color: #333;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #map {
+            height: 400px;
+            margin-top: 20px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+<body>
+    <h1>Simulación de Incendios Forestales</h1>
+    <form id="formulario">
+        <label for="lat">Latitud: </label>
+        <input type="text" id="lat" name="lat" required>
+        <label for="lon">Longitud: </label>
+        <input type="text" id="lon" name="lon" required>
+        <button type="button" onclick="useCurrentLocation()">Usar ubicación actual</button>
+        <br><br>
+        <label for="wind_speed">Velocidad del viento (km/h): </label>
+        <input type="number" id="wind_speed" name="wind_speed" required>
+        <br><br>
+        <label for="wind_direction">Dirección del viento (grados): </label>
+        <input type="number" id="wind_direction" name="wind_direction" required>
+        <br><br>
+        <label for="fire_level">Nivel del incendio (1-10): </label>
+        <input type="number" id="fire_level" name="fire_level" min="1" max="10" required>
+        <br><br>
+        <label for="num_fires">Número de incendios: </label>
+        <input type="number" id="num_fires" name="num_fires" min="1" max="3" required>
+        <br><br>
+        <button type="submit">Simular</button>
+    </form>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([51.505, -0.09], 5);  // Inicializar el mapa
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        function useCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    document.getElementById('lat').value = position.coords.latitude;
+                    document.getElementById('lon').value = position.coords.longitude;
+                });
+            } else {
+                alert("El GPS no está soportado por tu navegador.");
+            }
+        }
+
+        document.getElementById('formulario').onsubmit = function (event) {
+            event.preventDefault();
+
+            var lat = parseFloat(document.getElementById('lat').value);
+            var lon = parseFloat(document.getElementById('lon').value);
+            var windSpeed = parseFloat(document.getElementById('wind_speed').value);
+            var windDirection = parseFloat(document.getElementById('wind_direction').value);
+            var fireLevel = parseInt(document.getElementById('fire_level').value);
+            var numFires = parseInt(document.getElementById('num_fires').value);
+
+            var formData = {
+                lat: lat,
+                lon: lon,
+                wind_speed: windSpeed,
+                wind_direction: windDirection,
+                fire_level: fireLevel,
+                num_fires: numFires
+            };
+
+            fetch('/simulate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.map_url) {
+                    window.location.href = data.map_url;
+                }
+            });
+        };
+    </script>
+</body>
+</html>
